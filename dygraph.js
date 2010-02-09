@@ -1590,12 +1590,8 @@ Dygraph.dateParser = function(dateStr, self) {
 };
 
 /**
- * Parses a unix timestamp. This can be used as an alternative to
- * Dygraph.dateParser when you know that values will be specified in unix
- * time. Note that you *MUST* use this instead of your own unix time parser in
- * order to avoid confusing the type detection code
- * (c.f. detectTypeFromString_).
- *
+ * Parses a unix timestamp (i.e. seconds since the epoch). This is just provided
+ * as a convenience function for users.
  * @param {String} A unix timestamp (number of seconds since the epoch).
  * @return {Number} Milliseconds since epoch.
  * @public
@@ -1673,13 +1669,12 @@ Dygraph.prototype.parseCSV_ = function(data) {
   var xParser;
   var defaultParserSet = false;  // attempt to auto-detect x value type
 
-  // Special case when the user has specified xValueParser as
-  // Dygraph.unixTimestampParser. When this happens, we have to skip the type
-  // detection logic below because unix timestamps are indistinguishable from
-  // normal numbers. This is a bit of a hack.
-  if (this.attr_("xValueParser") === Dygraph.unixTimestampParser) {
-    xParser = Dygraph.unixTimestampParser;
-    this.attrs_.xValueFormatter = Dygraph.unixTimestampString_;
+  // If the user specifies an xValueParser and xValueType == "date", then assume
+  // the x-values are dates (i.e. even if they look like numbers). This lets
+  // users pass in dates such as seconds/milliseconds since the epoch.
+  if (this.attr_("xValueParser") && this.attr_("xValueType") == "date") {
+    xParser = this.attr_("xValueParser");
+    this.attrs_.xValueFormatter = Dygraph.dateString_;
     this.attrs_.xTicker = Dygraph.dateTicker;
     defaultParserSet = true;
   }
