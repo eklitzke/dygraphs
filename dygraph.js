@@ -1590,6 +1590,26 @@ Dygraph.dateParser = function(dateStr, self) {
 };
 
 /**
+ * Parses a unix timestamp. This can be used as an alternative to
+ * Dygraph.dateParser when you know that values will be specified in unix
+ * time. Note that you *MUST* use this instead of your own unix time parser in
+ * order to avoid confusing the type detection code
+ * (c.f. detectTypeFromString_).
+ *
+ * @param {String} A unix timestamp (number of seconds since the epoch).
+ * @return {Number} Milliseconds since epoch.
+ * @public
+ */
+Dygraph.unixTimestampParser = function (dateStr, self) {
+  var d;
+  d = parseInt(dateStr) * 1000;
+  if (!d || isNaN(d)) {
+    self.error("Couldn't parse " + dateStr + " as a date");
+  }
+  return d;
+}
+
+/**
  * Detects the type of the str (date or numeric) and sets the various
  * formatting attributes in this.attrs_ based on this type.
  * @param {String} str An x value.
@@ -1652,6 +1672,18 @@ Dygraph.prototype.parseCSV_ = function(data) {
 
   var xParser;
   var defaultParserSet = false;  // attempt to auto-detect x value type
+
+  // Special case when the user has specified xValueParser as
+  // Dygraph.unixTimestampParser. When this happens, we have to skip the type
+  // detection logic below because unix timestamps are indistinguishable from
+  // normal numbers. This is a bit of a hack.
+  if (this.attr_("xValueParser") === Dygraph.unixTimestampParser) {
+    xParser = Dygraph.unixTimestampParser;
+    this.attrs_.xValueFormatter = Dygraph.unixTimestampString_;
+    this.attrs_.xTicker = Dygraph.dateTicker;
+    defaultParserSet = true;
+  }
+
   var expectedCols = this.attr_("labels").length;
   var outOfOrder = false;
   for (var i = start; i < lines.length; i++) {
